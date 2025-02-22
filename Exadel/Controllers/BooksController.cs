@@ -18,6 +18,7 @@ namespace Exadel.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> GetAllBooks()
         {
             var books = await _context.Books.ToListAsync();
@@ -25,6 +26,7 @@ namespace Exadel.Controllers
         }
 
         [HttpGet("titles")]
+        [Authorize]
         public async Task<IActionResult> GetBookTitlesByPopularity()
         {
             var books = await _context.Books
@@ -35,6 +37,7 @@ namespace Exadel.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<IActionResult> GetBookById(int id)
         {
             var book = await _context.Books.FindAsync(id);
@@ -49,28 +52,38 @@ namespace Exadel.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddBook([FromBody] Book book)
+        [Authorize]
+        public async Task<IActionResult> AddBook([FromBody] BookRequestModel bookRequest)
         {
-            if (book == null)
+            if (bookRequest == null)
             {
                 return BadRequest("Book object is null");
             }
 
             var existingBook = await _context.Books
-                .FirstOrDefaultAsync(b => b.Title == book.Title);
+                .FirstOrDefaultAsync(b => b.Title == bookRequest.Title);
 
             if (existingBook != null)
             {
                 return Conflict("A book with that name already exists.");
             }
 
+            var book = new Book
+            {
+                Title = bookRequest.Title,
+                Author = bookRequest.Author,
+                PublicationYear = bookRequest.PublicationYear,
+                
+            };
+
             _context.Books.Add(book);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetBookById), new { id = book.Id }, book);
+            return CreatedAtAction(nameof(GetBookById), new { id = book.Id }, bookRequest);
         }
 
         [HttpPut]
+        [Authorize]
         public async Task<IActionResult> UpdateBook([FromBody] Book book)
         {
             if (book == null)
@@ -101,6 +114,7 @@ namespace Exadel.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteBook(int id)
         {
             var book = await _context.Books.FindAsync(id);
